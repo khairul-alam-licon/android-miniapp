@@ -12,20 +12,23 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.rakuten.tech.mobile.miniapp.MiniApp
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
 import com.rakuten.tech.mobile.miniapp.js.MiniAppPermissionType
 import com.rakuten.tech.mobile.miniapp.testapp.R
 import com.rakuten.tech.mobile.testapp.helper.AppPermission
 import com.rakuten.tech.mobile.testapp.ui.base.BaseActivity
+import com.rakuten.tech.mobile.testapp.ui.permission.promptCustomPermission
 import com.rakuten.tech.mobile.testapp.ui.settings.AppSettings
 import kotlinx.android.synthetic.main.mini_app_display_activity.*
 
-class MiniAppDisplayActivity : BaseActivity() {
+class MiniAppDisplayActivity : BaseActivity(), MiniApp.OnRequestCustomPermissionResultCallback {
 
     private lateinit var appId: String
     private lateinit var miniAppMessageBridge: MiniAppMessageBridge
     private var miniappPermissionCallback: (isGranted: Boolean) -> Unit = {}
+    private var miniappCustomPermissionsCallback: (grantResult: String) -> Unit = {}
 
     companion object {
         private val appIdTag = "app_id_tag"
@@ -102,6 +105,11 @@ class MiniAppDisplayActivity : BaseActivity() {
                     permissions: List<String>,
                     callback: (grantResult: String) -> Unit
                 ) {
+                    miniappCustomPermissionsCallback = callback
+                    promptCustomPermission(
+                        this@MiniAppDisplayActivity,
+                        permissions
+                    )
                 }
             }
 
@@ -127,6 +135,13 @@ class MiniAppDisplayActivity : BaseActivity() {
     ) {
         val isGranted = !grantResults.contains(PackageManager.PERMISSION_DENIED)
         miniappPermissionCallback.invoke(isGranted)
+    }
+
+    override fun onRequestCustomPermissionResult(
+        permissions: List<String>,
+        grantResults: List<String>
+    ) {
+        TODO("Not yet implemented")
     }
 
     private fun toggleProgressLoading(isOn: Boolean) {
