@@ -1,5 +1,6 @@
 package com.rakuten.tech.mobile.miniapp.api
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.google.gson.annotations.SerializedName
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
@@ -98,6 +99,7 @@ internal class RetrofitRequestExecutor(
     @Suppress("TooGenericExceptionCaught", "ThrowsCount")
     suspend fun <T> executeRequest(call: Call<T>): T = try {
         val response = call.execute()
+        Log.d("AAAAA",""+response.body().toString())
         when {
             response.isSuccessful -> {
                 // Body shouldn't be null if request was successful

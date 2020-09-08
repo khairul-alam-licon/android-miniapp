@@ -1,8 +1,10 @@
 package com.rakuten.tech.mobile.miniapp.api
 
 import androidx.annotation.VisibleForTesting
+import com.facebook.stetho.okhttp3.StethoInterceptor
 import com.google.gson.GsonBuilder
 import com.rakuten.tech.mobile.miniapp.BuildConfig
+import com.rakuten.tech.mobile.miniapp.DummyInterceptor
 import com.rakuten.tech.mobile.sdkutils.RasSdkHeaders
 import com.rakuten.tech.mobile.sdkutils.okhttp.addHeaderInterceptor
 import okhttp3.OkHttpClient
@@ -30,8 +32,11 @@ internal fun createRetrofitClient(
 ): Retrofit {
     @Suppress("SpreadOperator")
     val httpClient = OkHttpClient.Builder()
+        .addNetworkInterceptor(StethoInterceptor())
+        .addInterceptor(DummyInterceptor())
         .addHeaderInterceptor(*headers.asArray())
         .build()
+
     return Retrofit.Builder()
         .addConverterFactory(
             GsonConverterFactory.create(

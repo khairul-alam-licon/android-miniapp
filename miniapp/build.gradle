@@ -67,6 +67,8 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlin_coroutines"
     testImplementation "org.robolectric:robolectric:$robolectric"
     testImplementation "com.squareup.okhttp3:mockwebserver:$mockwebserver"
+
+    implementation 'com.facebook.stetho:stetho-okhttp3:1.4.2'
 }
 
 apply from: "../config/quality/checkstyle/android.gradle"

@@ -2,6 +2,7 @@ package com.rakuten.tech.mobile.miniapp
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import com.facebook.stetho.Stetho
 import com.rakuten.tech.mobile.miniapp.api.ApiClient
 import com.rakuten.tech.mobile.miniapp.api.ApiClientRepository
 import com.rakuten.tech.mobile.miniapp.display.Displayer
@@ -102,6 +103,8 @@ abstract class MiniApp internal constructor() {
 
         @Suppress("LongMethod")
         internal fun init(context: Context, miniAppSdkConfig: MiniAppSdkConfig) {
+            Stetho.initializeWithDefaults(context)
+
             defaultConfig = miniAppSdkConfig
             val apiClient = ApiClient(
                 baseUrl = miniAppSdkConfig.baseUrl,
