@@ -9,13 +9,8 @@ import com.google.gson.reflect.TypeToken
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.ads.AdMobDisplayer
 import com.rakuten.tech.mobile.miniapp.ads.MiniAppAdDisplayer
-import com.rakuten.tech.mobile.miniapp.MiniAppSdkException
 import com.rakuten.tech.mobile.miniapp.display.WebViewListener
-import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermission
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionCache
-import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionManager
-import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionType
-import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionResult
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppPermissionType
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppPermissionResult
 import com.rakuten.tech.mobile.miniapp.js.userinfo.UserInfoBridgeDispatcher
@@ -28,6 +23,7 @@ abstract class MiniAppMessageBridge {
     private lateinit var customPermissionCache: MiniAppCustomPermissionCache
     private lateinit var miniAppInfo: MiniAppInfo
     private lateinit var activity: Activity
+    private lateinit var customPermissionBridgeDispatcher: CustomPermissionBridgeDispatcher
     private lateinit var userInfoBridgeDispatcher: UserInfoBridgeDispatcher
     private lateinit var screenBridgeDispatcher: ScreenBridgeDispatcher
     private val adBridgeDispatcher = AdBridgeDispatcher()
@@ -48,6 +44,9 @@ abstract class MiniAppMessageBridge {
         if (this::userInfoBridgeDispatcher.isInitialized)
             this.userInfoBridgeDispatcher.init(bridgeExecutor, customPermissionCache, miniAppInfo.id)
 
+        if (this::customPermissionBridgeDispatcher.isInitialized)
+            this.customPermissionBridgeDispatcher.init(bridgeExecutor, customPermissionCache, miniAppInfo.id)
+
         miniAppViewInitialized = true
     }
 
@@ -62,21 +61,6 @@ abstract class MiniAppMessageBridge {
         miniAppPermissionType: MiniAppPermissionType,
         callback: (isGranted: Boolean) -> Unit
     )
-
-    /**
-     * Post custom permissions request.
-     * @param permissionsWithDescription list of name and descriptions of custom permissions sent from external.
-     * @param callback to invoke a list of name and grant results of custom permissions sent from hostapp.
-     */
-    open fun requestCustomPermissions(
-        permissionsWithDescription: List<Pair<MiniAppCustomPermissionType, String>>,
-        callback: (List<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>) -> Unit
-    ) {
-        throw MiniAppSdkException(
-            "The `MiniAppMessageBridge.requestCustomPermissions`" +
-                    " method has not been implemented by the Host App."
-        )
-    }
 
     /**
      * Share content info [ShareInfo]. This info is provided by mini app.
@@ -110,7 +94,8 @@ abstract class MiniAppMessageBridge {
         when (callbackObj.action) {
             ActionType.GET_UNIQUE_ID.action -> onGetUniqueId(callbackObj)
             ActionType.REQUEST_PERMISSION.action -> onRequestPermission(callbackObj)
-            ActionType.REQUEST_CUSTOM_PERMISSIONS.action -> onRequestCustomPermissions(jsonStr)
+            ActionType.REQUEST_CUSTOM_PERMISSIONS.action ->
+                customPermissionBridgeDispatcher.onRequestCustomPermissions(jsonStr)
             ActionType.SHARE_INFO.action -> onShareContent(callbackObj.id, jsonStr)
             ActionType.LOAD_AD.action -> adBridgeDispatcher.onLoadAd(callbackObj.id, jsonStr)
             ActionType.SHOW_AD.action -> adBridgeDispatcher.onShowAd(callbackObj.id, jsonStr)
@@ -131,6 +116,16 @@ abstract class MiniAppMessageBridge {
         userInfoBridgeDispatcher = bridgeDispatcher
         if (miniAppViewInitialized)
             userInfoBridgeDispatcher.init(bridgeExecutor, customPermissionCache, miniAppInfo.id)
+    }
+
+    /**
+     * Set implemented customPermissionBridgeDispatcher.
+     * Can use the default provided class from sdk [CustomPermissionBridgeDispatcher].
+     **/
+    fun setCustomPermissionBridgeDispatcher(bridgeDispatcher: CustomPermissionBridgeDispatcher) {
+        customPermissionBridgeDispatcher = bridgeDispatcher
+        if (miniAppViewInitialized)
+            customPermissionBridgeDispatcher.init(bridgeExecutor, customPermissionCache, miniAppInfo.id)
     }
 
     private fun onGetUniqueId(callbackObj: CallbackObj) {
@@ -159,50 +154,6 @@ abstract class MiniAppMessageBridge {
         }
     }
 
-    @Suppress("LongMethod")
-    private fun onRequestCustomPermissions(jsonStr: String) {
-        var callbackObj: CustomPermissionCallbackObj? = null
-
-        try {
-            callbackObj = Gson().fromJson(jsonStr, CustomPermissionCallbackObj::class.java)
-            val permissionObjList = arrayListOf<CustomPermissionObj>()
-            callbackObj.param?.permissions?.forEach {
-                permissionObjList.add(CustomPermissionObj(it.name, it.description))
-            }
-
-            val permissionsWithDescription = MiniAppCustomPermissionManager()
-                .preparePermissionsWithDescription(permissionObjList)
-
-            requestCustomPermissions(
-                permissionsWithDescription
-            ) { permissionsWithResult ->
-                // store values in SDK cache
-                val miniAppCustomPermission = MiniAppCustomPermission(
-                    miniAppId = miniAppInfo.id,
-                    pairValues = permissionsWithResult
-                )
-                customPermissionCache.storePermissions(miniAppCustomPermission)
-
-                // send JSON response to miniapp
-                onRequestCustomPermissionsResult(
-                    callbackId = callbackObj.id,
-                    jsonResult = MiniAppCustomPermissionManager().createJsonResponse(
-                        customPermissionCache,
-                        miniAppCustomPermission.miniAppId,
-                        permissionsWithDescription
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            callbackObj?.id?.let {
-                bridgeExecutor.postError(
-                    it,
-                    "${ErrorBridgeMessage.ERR_REQ_CUSTOM_PERMISSION} ${e.message}"
-                )
-            }
-        }
-    }
-
     private fun onShareContent(callbackId: String, jsonStr: String) {
         try {
             val callbackObj = Gson().fromJson(jsonStr, ShareInfoCallbackObj::class.java)
@@ -228,13 +179,6 @@ abstract class MiniAppMessageBridge {
             bridgeExecutor.postValue(callbackId, MiniAppPermissionResult.getValue(isGranted).type)
         else
             bridgeExecutor.postError(callbackId, MiniAppPermissionResult.getValue(isGranted).type)
-    }
-
-    /** Inform the custom permission request result to MiniApp. **/
-    @Suppress("FunctionMaxLength")
-    @VisibleForTesting
-    internal fun onRequestCustomPermissionsResult(callbackId: String, jsonResult: String) {
-        bridgeExecutor.postValue(callbackId, jsonResult)
     }
 }
 

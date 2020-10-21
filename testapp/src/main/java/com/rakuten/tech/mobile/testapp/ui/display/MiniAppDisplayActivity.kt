@@ -15,6 +15,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.ads.AdMobDisplayer
+import com.rakuten.tech.mobile.miniapp.js.CustomPermissionBridgeDispatcher
 import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
 import com.rakuten.tech.mobile.miniapp.js.userinfo.UserInfoBridgeDispatcher
@@ -132,6 +133,18 @@ class MiniAppDisplayActivity : BaseActivity() {
                     AppPermission.getRequestCode(miniAppPermissionType)
                 )
             }
+        }
+
+        miniAppMessageBridge.setAdMobDisplayer(AdMobDisplayer(this@MiniAppDisplayActivity))
+
+        val userInfoBridgeDispatcher = object : UserInfoBridgeDispatcher() {
+            override fun getUserName(): String = AppSettings.instance.profileName
+
+            override fun getProfilePhoto(): String = AppSettings.instance.profilePictureUrlBase64
+        }
+        miniAppMessageBridge.setUserInfoBridgeDispatcher(userInfoBridgeDispatcher)
+
+        val customPermissionBridgeDispatcher = object : CustomPermissionBridgeDispatcher() {
 
             override fun requestCustomPermissions(
                 permissionsWithDescription: List<Pair<MiniAppCustomPermissionType, String>>,
@@ -145,15 +158,7 @@ class MiniAppDisplayActivity : BaseActivity() {
                 )
             }
         }
-
-        miniAppMessageBridge.setAdMobDisplayer(AdMobDisplayer(this@MiniAppDisplayActivity))
-
-        val userInfoBridgeDispatcher = object : UserInfoBridgeDispatcher() {
-            override fun getUserName(): String = AppSettings.instance.profileName
-
-            override fun getProfilePhoto(): String = AppSettings.instance.profilePictureUrlBase64
-        }
-        miniAppMessageBridge.setUserInfoBridgeDispatcher(userInfoBridgeDispatcher)
+        miniAppMessageBridge.setCustomPermissionBridgeDispatcher(customPermissionBridgeDispatcher)
     }
 
     override fun onRequestPermissionsResult(

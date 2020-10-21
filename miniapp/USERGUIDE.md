@@ -144,16 +144,6 @@ val miniAppMessageBridge = object: MiniAppMessageBridge() {
         callback.invoke(true)
     }
 
-    override fun requestCustomPermissions(
-        permissionsWithDescription: List<Pair<MiniAppCustomPermissionType, String>>,
-        callback: (List<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>) -> Unit
-    ) {
-        // Implementation details to request custom permissions
-        // .. .. ..
-        // pass a list of Pair of MiniAppCustomPermissionType and MiniAppCustomPermissionResult in callback 
-        callback.invoke(listOf()) 
-    }
-
     override fun shareContent(
         content: String,
         callback: (isSuccess: Boolean, message: String?) -> Unit
@@ -182,6 +172,22 @@ val userInfoBridgeDispatcher = object : UserInfoBridgeDispatcher() {
 
 // set UserInfoBridgeDispatcher object to miniAppMessageBridge
 miniAppMessageBridge.setUserInfoBridgeDispatcher(userInfoBridgeDispatcher)
+
+val customPermissionBridgeDispatcher = object : CustomPermissionBridgeDispatcher() {
+
+            override fun requestCustomPermissions(
+                permissionsWithDescription: List<Pair<MiniAppCustomPermissionType, String>>,
+                callback: (List<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>) -> Unit
+            ) {
+                // Implementation details to request custom permissions
+                // .. .. ..
+                // pass a list of Pair of MiniAppCustomPermissionType and MiniAppCustomPermissionResult in callback 
+                callback.invoke(listOf()) 
+            }
+        }
+
+// set CustomPermissionBridgeDispatcher object to miniAppMessageBridge
+miniAppMessageBridge.setCustomPermissionBridgeDispatcher(customPermissionBridgeDispatcher)
 ```
 
 ### #5 Create and display a Mini App

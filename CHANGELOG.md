@@ -3,6 +3,7 @@
 ### x.x.x
 **SDK**
 - **Feature:** Handle the screen orientation change request from miniapp.
+- **Update:** Introduced `CustomPermissionBridgeDispatcher` for integrating to `MiniAppMessageBridge`. See the new changes in [USERGUIDE](https://github.com/rakutentech/android-miniapp/blob/master/miniapp/USERGUIDE.md#4-implement-the-miniappmessagebridge).
 
 ### 2.3.0 (2020-10-15)
 **SDK**
