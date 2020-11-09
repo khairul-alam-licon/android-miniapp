@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.webkit.WebView
@@ -102,10 +103,15 @@ class MiniAppDisplayActivity : BaseActivity() {
 
             miniAppNavigator = object : MiniAppNavigator {
 
-                override fun openExternalUrl(url: String, externalResultHandler: ExternalResultHandler) {
+                override fun openExternalUrl(
+                    url: String,
+                    externalResultHandler: ExternalResultHandler
+                ) {
                     sampleWebViewExternalResultHandler = externalResultHandler
-                    WebViewActivity.startForResult(this@MiniAppDisplayActivity, url,
-                        appId, externalWebViewReqCode)
+                    WebViewActivity.startForResult(
+                        this@MiniAppDisplayActivity, url,
+                        appId, externalWebViewReqCode
+                    )
                 }
             }
 
@@ -178,6 +184,10 @@ class MiniAppDisplayActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == externalWebViewReqCode && resultCode == Activity.RESULT_OK) {
             data?.let { intent -> sampleWebViewExternalResultHandler.emitResult(intent) }
+        }
+        // MiniAppWebView.CHROME_CUSTOM_TAB_REQUEST_CODE
+        else if (requestCode == 10011) {
+            // trying to get data here, still needs investigation here
         }
     }
 

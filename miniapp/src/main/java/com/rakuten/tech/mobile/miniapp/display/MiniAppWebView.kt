@@ -12,9 +12,9 @@ import androidx.core.net.toUri
 import androidx.webkit.WebViewAssetLoader
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.MiniAppScheme
-import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
 import com.rakuten.tech.mobile.miniapp.navigator.ExternalResultHandler
+import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionCache
 import java.io.File
 
@@ -23,15 +23,15 @@ private const val MINI_APP_INTERFACE = "MiniAppAndroid"
 
 @SuppressLint("SetJavaScriptEnabled")
 internal class MiniAppWebView(
-    context: Context,
+    val activityContext: Context,
     val basePath: String,
     val miniAppInfo: MiniAppInfo,
     val miniAppMessageBridge: MiniAppMessageBridge,
     var miniAppNavigator: MiniAppNavigator?,
     val hostAppUserAgentInfo: String,
-    val miniAppWebChromeClient: MiniAppWebChromeClient = MiniAppWebChromeClient(context, miniAppInfo),
+    val miniAppWebChromeClient: MiniAppWebChromeClient = MiniAppWebChromeClient(activityContext, miniAppInfo),
     val miniAppCustomPermissionCache: MiniAppCustomPermissionCache
-) : WebView(context), WebViewListener {
+) : WebView(activityContext), WebViewListener {
 
     private val miniAppScheme = MiniAppScheme(miniAppInfo.id)
 
@@ -68,6 +68,7 @@ internal class MiniAppWebView(
             settings.userAgentString =
                 String.format("%s %s", settings.userAgentString, hostAppUserAgentInfo)
 
+        miniAppNavigator = null
         setupMiniAppNavigator()
         webViewClient = MiniAppWebViewClient(context, getWebViewAssetLoader(), miniAppNavigator!!,
             externalResultHandler, miniAppScheme)
@@ -97,13 +98,18 @@ internal class MiniAppWebView(
         destroy()
     }
 
+    private val CHROME_CUSTOM_TAB_REQUEST_CODE = 10011
+
     @VisibleForTesting
     internal fun setupMiniAppNavigator() {
         if (miniAppNavigator == null) {
             miniAppNavigator = object : MiniAppNavigator {
                 override fun openExternalUrl(url: String, externalResultHandler: ExternalResultHandler) {
                     val customTabsIntent = CustomTabsIntent.Builder().build()
-                    customTabsIntent.launchUrl(context, url.toUri())
+                    customTabsIntent.intent.data = url.toUri()
+                    customTabsIntent.intent.putExtra("load_url_tag", url)
+                    customTabsIntent.intent.putExtra("miniapp_id_tag", miniAppInfo.id)
+                    (activityContext as Activity).startActivityForResult(customTabsIntent.intent, CHROME_CUSTOM_TAB_REQUEST_CODE)
                 }
             }
         }

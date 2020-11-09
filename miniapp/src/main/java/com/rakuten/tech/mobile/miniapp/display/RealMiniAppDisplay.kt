@@ -71,7 +71,7 @@ internal class RealMiniAppDisplay(
     private suspend fun provideMiniAppWebView(context: Context): MiniAppWebView =
         miniAppWebView ?: withContext(Dispatchers.Main) {
             miniAppWebView = MiniAppWebView(
-                context = context,
+                activityContext = context,
                 basePath = basePath,
                 miniAppInfo = miniAppInfo,
                 miniAppMessageBridge = miniAppMessageBridge,
