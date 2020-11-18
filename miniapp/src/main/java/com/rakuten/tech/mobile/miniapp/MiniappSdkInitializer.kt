@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.rakuten.tech.mobile.manifestconfig.annotations.ManifestConfig
 import com.rakuten.tech.mobile.manifestconfig.annotations.MetaData
@@ -64,6 +65,15 @@ class MiniappSdkInitializer : ContentProvider() {
         val context = context ?: return false
         val manifestConfig = createAppManifestConfig(context)
 
+        //values in gradle.properties
+        //----------------------------
+        //IS_TEST_MODE=true
+        //IS_PREVIEW_MODE=false
+        //----------------------------
+
+        Log.d("Observe isPreview at init",""+manifestConfig.isPreviewMode())
+        Log.d("Observe isTest at init",""+manifestConfig.isTestMode())
+
         MiniApp.init(
             context = context,
             miniAppSdkConfig = MiniAppSdkConfig(
@@ -71,7 +81,10 @@ class MiniappSdkInitializer : ContentProvider() {
                 rasAppId = manifestConfig.rasAppId(),
                 subscriptionKey = manifestConfig.subscriptionKey(),
                 hostAppUserAgentInfo = manifestConfig.hostAppUserAgentInfo(),
-                isPreviewMode = manifestConfig.isPreviewMode() || manifestConfig.isTestMode()
+                isPreviewMode = manifestConfig.isPreviewMode(),
+                isTestMode = manifestConfig.isTestMode()
+                // isTestMode = manifestConfig.isPreviewMode() || manifestConfig.isTestMode() // --> breaks spec
+                // isPreviewMode = manifestConfig.isPreviewMode() || manifestConfig.isTestMode() --> breaks spec
             )
         )
 

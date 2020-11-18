@@ -91,7 +91,8 @@ class AppSettings private constructor(context: Context) {
             subscriptionKey = subscriptionKey,
             // no update for hostAppUserAgentInfo because SDK does not allow changing it at runtime
             hostAppUserAgentInfo = manifestConfig.hostAppUserAgentInfo(),
-            isPreviewMode = isPreviewMode
+            isPreviewMode = isPreviewMode,
+            isTestMode = manifestConfig.isTestMode()
         )
 
     companion object {
