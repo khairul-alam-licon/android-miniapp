@@ -1,5 +1,6 @@
 package com.rakuten.tech.mobile.testapp.ui.display
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -178,6 +180,8 @@ class MiniAppDisplayActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == externalWebViewReqCode && resultCode == Activity.RESULT_OK) {
             data?.let { intent -> sampleWebViewExternalResultHandler.emitResult(intent) }
+        } else if (requestCode == 991) {
+            Toast.makeText(this, "granted camera!", Toast.LENGTH_LONG).show()
         }
     }
 

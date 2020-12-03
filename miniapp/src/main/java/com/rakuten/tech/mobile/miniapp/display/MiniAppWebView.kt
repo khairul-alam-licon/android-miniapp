@@ -1,13 +1,18 @@
 package com.rakuten.tech.mobile.miniapp.display
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
 import android.view.ViewGroup
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.webkit.WebViewAssetLoader
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
@@ -73,6 +78,19 @@ internal class MiniAppWebView(
         webViewClient = MiniAppWebViewClient(context, getWebViewAssetLoader(), miniAppNavigator!!,
             externalResultHandler, miniAppScheme)
         webChromeClient = miniAppWebChromeClient
+
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            )
+            == PackageManager.PERMISSION_DENIED
+        ) {
+            ActivityCompat.requestPermissions(
+                context,
+                arrayOf(Manifest.permission.CAMERA),
+                991
+            )
+        }
 
         loadUrl(getLoadUrl())
     }

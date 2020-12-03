@@ -2,18 +2,16 @@ package com.rakuten.tech.mobile.miniapp.display
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.GeolocationPermissions
-import android.webkit.JsResult
-import android.webkit.JsPromptResult
-import android.webkit.WebChromeClient
-import android.webkit.WebView
+import android.webkit.*
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.js.DialogType
 import java.io.BufferedReader
+
 
 internal class MiniAppWebChromeClient(
     val context: Context,
@@ -152,5 +150,15 @@ internal class MiniAppWebChromeClient(
     fun onWebViewDetach() {
         if (customView != null)
             onHideCustomView()
+    }
+
+    override fun onPermissionRequest(request: PermissionRequest?) {
+        val requestedResources = request!!.resources
+        for (r in requestedResources) {
+            if (r == PermissionRequest.RESOURCE_VIDEO_CAPTURE) {
+                request.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+                break
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.view.View
+import android.webkit.CookieManager
 import android.webkit.WebView
 import androidx.annotation.VisibleForTesting
 import androidx.core.app.ActivityCompat
@@ -11,8 +12,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.OnLifecycleEvent
 import com.rakuten.tech.mobile.miniapp.MiniAppDisplay
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
-import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
+import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionCache
 import com.rakuten.tech.mobile.miniapp.sdkExceptionForNoActivityContext
 import kotlinx.coroutines.Dispatchers
@@ -79,6 +80,10 @@ internal class RealMiniAppDisplay(
                 hostAppUserAgentInfo = hostAppUserAgentInfo,
                 miniAppCustomPermissionCache = miniAppCustomPermissionCache
             )
+
+            val cookieManager: CookieManager = CookieManager.getInstance()
+            cookieManager.setAcceptThirdPartyCookies(miniAppWebView, true)
+
             miniAppWebView!!
         }
 
