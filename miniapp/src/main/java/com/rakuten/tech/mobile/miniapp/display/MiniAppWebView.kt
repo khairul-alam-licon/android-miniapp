@@ -70,6 +70,10 @@ internal class MiniAppWebView(
         settings.databaseEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
 
+//        settings.setSupportZoom(false)
+//        settings.allowFileAccess = true
+//        settings.allowContentAccess = true
+
         if (hostAppUserAgentInfo.isNotEmpty())
             settings.userAgentString =
                 String.format("%s %s", settings.userAgentString, hostAppUserAgentInfo)

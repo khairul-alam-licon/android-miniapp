@@ -1,17 +1,26 @@
 package com.rakuten.tech.mobile.miniapp.display
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.js.DialogType
 import java.io.BufferedReader
-
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 internal class MiniAppWebChromeClient(
     val context: Context,
@@ -152,13 +161,81 @@ internal class MiniAppWebChromeClient(
             onHideCustomView()
     }
 
-    override fun onPermissionRequest(request: PermissionRequest?) {
-        val requestedResources = request!!.resources
-        for (r in requestedResources) {
-            if (r == PermissionRequest.RESOURCE_VIDEO_CAPTURE) {
-                request.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
-                break
+    private var imagePathCallback: ValueCallback<Array<Uri>>? = null
+    private var cameraImagePath: String? = null
+
+    override fun onShowFileChooser(
+        webView: WebView?,
+        filePathCallback: ValueCallback<Array<Uri>>?,
+        fileChooserParams: FileChooserParams?
+    ): Boolean {
+
+        imagePathCallback?.onReceiveValue(null)
+        imagePathCallback = null
+        imagePathCallback = filePathCallback
+
+        val takePictureIntent = createImageCaptureIntent()
+
+        val contentSelectionIntent = Intent(Intent.ACTION_GET_CONTENT)
+        contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE)
+        contentSelectionIntent.type = "image/*"
+
+        val intentArray: Array<Intent?>
+        intentArray = arrayOf(takePictureIntent)
+
+        val chooserIntent = Intent(Intent.ACTION_CHOOSER)
+        chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent)
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray)
+
+        try {
+            if (context is Activity) context.startActivityForResult(chooserIntent, 1112)
+        } catch (e: ActivityNotFoundException) {
+            imagePathCallback = null
+            cameraImagePath = null
+
+            Toast.makeText(
+                context,
+                e.message,
+                Toast.LENGTH_LONG
+            ).show()
+
+            return false
+        }
+        return true
+    }
+
+    private fun createImageCaptureIntent(): Intent? {
+        var captureImageIntent: Intent? = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+        if (captureImageIntent?.resolveActivity(context.packageManager) != null) {
+            var imageFile: File? = null
+
+            try {
+                imageFile = createImageFile()
+                captureImageIntent.putExtra("CameraImagePath", cameraImagePath)
+            } catch (ex: IOException) {
+                ex.printStackTrace()
+            }
+
+            if (imageFile != null) {
+                cameraImagePath = "file:" + imageFile.absolutePath
+                captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile))
+            } else {
+                captureImageIntent = null
             }
         }
+
+        return captureImageIntent
+    }
+
+    private fun createImageFile(): File? {
+        val timeStamp = SimpleDateFormat.getDateInstance().format(Date())
+        val imageFileName = "JPEG_" + timeStamp + "_"
+
+        var storageDir: File? = null
+        if (context is Activity)
+            storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+
+        return File.createTempFile(imageFileName, ".jpg", storageDir)
     }
 }
