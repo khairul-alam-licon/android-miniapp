@@ -15,13 +15,14 @@
 
     <application
         android:name="com.rakuten.tech.mobile.testapp.SampleApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${appName}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        tools:ignore="GoogleAppIndexingWarning">
+        tools:ignore="GoogleAppIndexingWarning"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name="com.rakuten.tech.mobile.testapp.ui.miniapplist.MiniAppListActivity"
@@ -42,7 +43,7 @@
             android:configChanges="orientation|screenSize" />
         <activity
             android:name="com.rakuten.tech.mobile.testapp.ui.input.MiniAppInputActivity"
-            android:label="@string/action_go_input" />
+            android:label="@string/lb_display_input" />
         <activity
             android:name="com.rakuten.tech.mobile.testapp.ui.settings.SettingsMenuActivity"
             android:label="@string/lb_app_settings"

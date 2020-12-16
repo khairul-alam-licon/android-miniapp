@@ -16,6 +16,8 @@ import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.js.DialogType
+import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionCache
+import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionType
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -23,8 +25,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 internal class MiniAppWebChromeClient(
-    val context: Context,
-    val miniAppInfo: MiniAppInfo
+    private val context: Context,
+    private val miniAppInfo: MiniAppInfo,
+    val miniAppCustomPermissionCache: MiniAppCustomPermissionCache
 ) : WebChromeClient() {
 
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
@@ -46,7 +49,12 @@ internal class MiniAppWebChromeClient(
         origin: String?,
         callback: GeolocationPermissions.Callback?
     ) {
-        callback?.invoke(origin, true, false)
+        if (miniAppCustomPermissionCache.hasPermission(
+                miniAppInfo.id,
+                MiniAppCustomPermissionType.LOCATION
+            )
+        ) callback?.invoke(origin, true, false)
+        else callback?.invoke(origin, false, false)
     }
 
     override fun onJsAlert(
@@ -60,7 +68,7 @@ internal class MiniAppWebChromeClient(
             message = message,
             result = result as JsResult,
             dialogType = DialogType.ALERT,
-            miniAppInfo = miniAppInfo
+            miniAppTitle = miniAppInfo.displayName
         )
 
     override fun onJsConfirm(
@@ -74,7 +82,7 @@ internal class MiniAppWebChromeClient(
             message = message,
             result = result as JsResult,
             dialogType = DialogType.CONFIRM,
-            miniAppInfo = miniAppInfo
+            miniAppTitle = miniAppInfo.displayName
         )
 
     override fun onJsPrompt(
@@ -89,7 +97,7 @@ internal class MiniAppWebChromeClient(
         defaultValue = defaultValue,
         result = result,
         dialogType = DialogType.PROMPT,
-        miniAppInfo = miniAppInfo
+        miniAppTitle = miniAppInfo.displayName
     )
 
     @VisibleForTesting

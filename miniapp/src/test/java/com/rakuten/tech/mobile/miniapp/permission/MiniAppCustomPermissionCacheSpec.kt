@@ -12,7 +12,7 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.`when`
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "LargeClass")
 class MiniAppCustomPermissionCacheSpec {
     private lateinit var miniAppCustomPermissionCache: MiniAppCustomPermissionCache
     private val mockSharedPrefs: SharedPreferences = mock()
@@ -25,6 +25,7 @@ class MiniAppCustomPermissionCacheSpec {
         `when`(mockContext.getSharedPreferences(anyString(), anyInt()))
             .thenReturn(mockSharedPrefs)
         `when`(mockEditor.putString(anyString(), anyString())).thenReturn(mockEditor)
+        `when`(mockEditor.remove(anyString())).thenReturn(mockEditor)
 
         miniAppCustomPermissionCache = spy(MiniAppCustomPermissionCache(mockContext))
     }
@@ -85,6 +86,12 @@ class MiniAppCustomPermissionCacheSpec {
     /** end region */
 
     @Test
+    fun `removeId will remove all permission data from the store`() {
+        miniAppCustomPermissionCache.removePermission(TEST_MA_ID)
+        verify(mockEditor, times(1)).remove(TEST_MA_ID)
+    }
+
+    @Test
     fun `storePermissions will invoke necessary functions to save value`() {
         val list = listOf(Pair(MiniAppCustomPermissionType.USER_NAME, MiniAppCustomPermissionResult.DENIED))
         val miniAppCustomPermission = MiniAppCustomPermission(TEST_MA_ID, list)
@@ -106,22 +113,11 @@ class MiniAppCustomPermissionCacheSpec {
         miniAppCustomPermissionCache.applyStoringPermissions(miniAppCustomPermission)
 
         verify(mockEditor).putString(anyString(), anyString())
-        verify(miniAppCustomPermissionCache).orderByDefaultList(miniAppCustomPermission)
+        verify(miniAppCustomPermissionCache).sortedByDefault(miniAppCustomPermission)
     }
 
     @Test
     fun `orderByDefaultList should return correct ordering by MiniAppCustomPermissionType`() {
-        val defaultPermission = MiniAppCustomPermission(
-            TEST_MA_ID,
-            listOf(
-                Pair(MiniAppCustomPermissionType.USER_NAME, MiniAppCustomPermissionResult.DENIED),
-                Pair(MiniAppCustomPermissionType.PROFILE_PHOTO, MiniAppCustomPermissionResult.DENIED),
-                Pair(MiniAppCustomPermissionType.CONTACT_LIST, MiniAppCustomPermissionResult.DENIED),
-                Pair(MiniAppCustomPermissionType.LOCATION, MiniAppCustomPermissionResult.DENIED)
-            )
-        )
-        doReturn(defaultPermission).whenever(miniAppCustomPermissionCache).defaultDeniedList(TEST_MA_ID)
-
         val unorderedPermission = MiniAppCustomPermission(
             TEST_MA_ID,
             listOf(
@@ -132,7 +128,7 @@ class MiniAppCustomPermissionCacheSpec {
             )
         )
 
-        val actual = miniAppCustomPermissionCache.orderByDefaultList(unorderedPermission)
+        val actual = miniAppCustomPermissionCache.sortedByDefault(unorderedPermission)
 
         actual.pairValues[0].first shouldEqual MiniAppCustomPermissionType.USER_NAME
         actual.pairValues[1].first shouldEqual MiniAppCustomPermissionType.PROFILE_PHOTO
@@ -143,11 +139,11 @@ class MiniAppCustomPermissionCacheSpec {
     /**
      * region: prepareAllPermissionsToStore
      */
-    @Suppress("MaximumLineLength")
     @Test
     fun `prepareAllPermissionsToStore should combine cached and supplied list properly with unknown permissions`() {
         val cached = MiniAppCustomPermission(
-            TEST_MA_ID, listOf(Pair(MiniAppCustomPermissionType.UNKNOWN, MiniAppCustomPermissionResult.PERMISSION_NOT_AVAILABLE))
+            TEST_MA_ID,
+            listOf(Pair(MiniAppCustomPermissionType.UNKNOWN, MiniAppCustomPermissionResult.PERMISSION_NOT_AVAILABLE))
         )
         val supplied = listOf(
             Pair(
@@ -173,6 +169,42 @@ class MiniAppCustomPermissionCacheSpec {
         val actual = miniAppCustomPermissionCache.prepareAllPermissionsToStore(TEST_MA_ID, supplied)
 
         actual.size shouldBe 1
+    }
+    /** end region */
+
+    /**
+     * region: hasPermission
+     */
+    @Test
+    fun `hasPermission should return false by default when there is no allowed permission found`() {
+        val actual = miniAppCustomPermissionCache.hasPermission(
+            TEST_MA_ID,
+            MiniAppCustomPermissionType.USER_NAME
+        )
+
+        actual shouldBe false
+    }
+
+    @Test
+    fun `hasPermission should return true when there is allowed permission found`() {
+        val allowedUserName = MiniAppCustomPermission(
+            TEST_MA_ID,
+            listOf(
+                Pair(
+                    MiniAppCustomPermissionType.USER_NAME,
+                    MiniAppCustomPermissionResult.ALLOWED
+                )
+            )
+        )
+
+        doReturn(allowedUserName).whenever(miniAppCustomPermissionCache).readPermissions(TEST_MA_ID)
+
+        val actual = miniAppCustomPermissionCache.hasPermission(
+            TEST_MA_ID,
+            MiniAppCustomPermissionType.USER_NAME
+        )
+
+        actual shouldBe true
     }
     /** end region */
 

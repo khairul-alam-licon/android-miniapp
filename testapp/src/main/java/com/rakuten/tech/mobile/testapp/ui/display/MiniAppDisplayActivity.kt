@@ -21,6 +21,7 @@ import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.ads.AdMobDisplayer
 import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
+import com.rakuten.tech.mobile.miniapp.js.userinfo.Contact
 import com.rakuten.tech.mobile.miniapp.js.userinfo.TokenData
 import com.rakuten.tech.mobile.miniapp.js.userinfo.UserInfoBridgeDispatcher
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppPermissionType
@@ -30,6 +31,7 @@ import com.rakuten.tech.mobile.miniapp.testapp.databinding.MiniAppDisplayActivit
 import com.rakuten.tech.mobile.testapp.helper.AppPermission
 import com.rakuten.tech.mobile.testapp.ui.base.BaseActivity
 import com.rakuten.tech.mobile.testapp.ui.settings.AppSettings
+import java.util.ArrayList
 
 class MiniAppDisplayActivity : BaseActivity() {
 
@@ -44,10 +46,17 @@ class MiniAppDisplayActivity : BaseActivity() {
     companion object {
         private val appIdTag = "app_id_tag"
         private val miniAppTag = "mini_app_tag"
+        private val appUrlTag = "app_url_tag"
 
         fun start(context: Context, appId: String) {
             context.startActivity(Intent(context, MiniAppDisplayActivity::class.java).apply {
                 putExtra(appIdTag, appId)
+            })
+        }
+
+        fun startUrl(context: Context, appUrl: String) {
+            context.startActivity(Intent(context, MiniAppDisplayActivity::class.java).apply {
+                putExtra(appUrlTag, appUrl)
             })
         }
 
@@ -72,47 +81,59 @@ class MiniAppDisplayActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         showBackIcon()
 
-        if (intent.hasExtra(miniAppTag) || intent.hasExtra(appIdTag)) {
-            val appId = intent.getStringExtra(appIdTag) ?: intent.getParcelableExtra<MiniAppInfo>(miniAppTag)!!.id
-            val appInfo = intent.getParcelableExtra<MiniAppInfo>(miniAppTag)
+        if (!(intent.hasExtra(miniAppTag) || intent.hasExtra(appIdTag) || intent.hasExtra(appUrlTag))) {
+            return
+        }
 
-            binding = DataBindingUtil.setContentView(this, R.layout.mini_app_display_activity)
+        val appInfo = intent.getParcelableExtra<MiniAppInfo>(miniAppTag)
+        val appUrl = intent.getStringExtra(appUrlTag)
+        var appId = intent.getStringExtra(appIdTag) ?: appInfo?.id
 
-            viewModel = ViewModelProvider.NewInstanceFactory()
-                .create(MiniAppDisplayViewModel::class.java).apply {
+        binding = DataBindingUtil.setContentView(this, R.layout.mini_app_display_activity)
 
-                    setHostLifeCycle(lifecycle)
-                    miniAppView.observe(this@MiniAppDisplayActivity, Observer {
-                        if (ApplicationInfo.FLAG_DEBUGGABLE == 2)
-                            WebView.setWebContentsDebuggingEnabled(true)
-                        //action: display webview
-                        setContentView(it)
-                    })
+        viewModel = ViewModelProvider.NewInstanceFactory()
+            .create(MiniAppDisplayViewModel::class.java).apply {
 
-                    errorData.observe(this@MiniAppDisplayActivity, Observer {
-                        Toast.makeText(this@MiniAppDisplayActivity, it, Toast.LENGTH_LONG).show()
-                    })
+                setHostLifeCycle(lifecycle)
+                miniAppView.observe(this@MiniAppDisplayActivity, Observer {
+                    if (ApplicationInfo.FLAG_DEBUGGABLE == 2)
+                        WebView.setWebContentsDebuggingEnabled(true)
+                    //action: display webview
+                    setContentView(it)
+                })
 
-                    isLoading.observe(this@MiniAppDisplayActivity, Observer {
-                        toggleProgressLoading(it)
-                    })
-                }
+                errorData.observe(this@MiniAppDisplayActivity, Observer {
+                    Toast.makeText(this@MiniAppDisplayActivity, it, Toast.LENGTH_LONG).show()
+                })
 
-            setupMiniAppMessageBridge()
-
-            miniAppNavigator = object : MiniAppNavigator {
-
-                override fun openExternalUrl(url: String, externalResultHandler: ExternalResultHandler) {
-                    sampleWebViewExternalResultHandler = externalResultHandler
-                    WebViewActivity.startForResult(this@MiniAppDisplayActivity, url,
-                        appId, externalWebViewReqCode)
-                }
+                isLoading.observe(this@MiniAppDisplayActivity, Observer {
+                    toggleProgressLoading(it)
+                })
             }
 
+        setupMiniAppMessageBridge()
+
+        miniAppNavigator = object : MiniAppNavigator {
+
+            override fun openExternalUrl(url: String, externalResultHandler: ExternalResultHandler) {
+                sampleWebViewExternalResultHandler = externalResultHandler
+                WebViewActivity.startForResult(this@MiniAppDisplayActivity, url,
+                    appId, appUrl, externalWebViewReqCode)
+            }
+        }
+
+        if (appUrl != null) {
+            viewModel.obtainMiniAppDisplayUrl(
+                this@MiniAppDisplayActivity,
+                appUrl,
+                miniAppMessageBridge,
+                miniAppNavigator
+            )
+        } else {
             viewModel.obtainMiniAppDisplay(
                 this@MiniAppDisplayActivity,
                 appInfo,
-                appId,
+                appId!!,
                 miniAppMessageBridge,
                 miniAppNavigator
             )
@@ -161,6 +182,20 @@ class MiniAppDisplayActivity : BaseActivity() {
                     }
                     .create()
                     .show()
+            }
+
+            override fun getContacts(
+                onSuccess: (contacts: ArrayList<Contact>) -> Unit,
+                onError: (message: String) -> Unit
+            ) {
+                val hasContact = AppSettings.instance.isContactsSaved
+                if (hasContact) {
+                    val contacts: ArrayList<Contact> = arrayListOf()
+                    AppSettings.instance.contactNames.forEach {
+                        contacts.add(Contact(it))
+                    }
+                    onSuccess(contacts)
+                } else onError("There is no contact found in HostApp.")
             }
         }
         miniAppMessageBridge.setUserInfoBridgeDispatcher(userInfoBridgeDispatcher)

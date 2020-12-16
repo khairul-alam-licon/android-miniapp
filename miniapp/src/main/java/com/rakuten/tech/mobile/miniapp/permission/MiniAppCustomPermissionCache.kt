@@ -96,44 +96,25 @@ internal class MiniAppCustomPermissionCache(context: Context) {
         applyStoringPermissions(MiniAppCustomPermission(miniAppId, allPermissions))
     }
 
-    @SuppressWarnings("PrintStackTrace")
-    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun applyStoringPermissions(miniAppCustomPermission: MiniAppCustomPermission) {
-        try {
-            val jsonToStore: String = Gson().toJson(orderByDefaultList(miniAppCustomPermission))
-            prefs.edit().putString(miniAppCustomPermission.miniAppId, jsonToStore).apply()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    /**
+     * Remove the grant results per MiniApp from SharedPreferences.
+     * @param [miniAppId] the key provided to find the stored results per MiniApp.
+     */
+    fun removePermission(miniAppId: String) {
+        prefs.edit().remove(miniAppId).apply()
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun orderByDefaultList(miniAppCustomPermission: MiniAppCustomPermission): MiniAppCustomPermission {
-        val miniAppId = miniAppCustomPermission.miniAppId
-        val defaultTypesOrder = mutableListOf<MiniAppCustomPermissionType>()
-        defaultDeniedList(miniAppId).pairValues.forEach {
-            defaultTypesOrder.add(it.first)
-        }
+    fun applyStoringPermissions(miniAppCustomPermission: MiniAppCustomPermission) {
+        val jsonToStore: String = Gson().toJson(sortedByDefault(miniAppCustomPermission))
+        prefs.edit().putString(miniAppCustomPermission.miniAppId, jsonToStore).apply()
+    }
 
-        val currentTypesOrder = mutableListOf<MiniAppCustomPermissionType>()
-        miniAppCustomPermission.pairValues.forEach {
-            currentTypesOrder.add(it.first)
-        }
-
-        val expectedTypesOrder = currentTypesOrder.map {
-            defaultTypesOrder.indexOf(it)
-        }.sorted().map { value -> defaultTypesOrder[value] }
-
-        val orderedPair =
-            mutableListOf<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>()
-
-        expectedTypesOrder.forEachIndexed { index, type ->
-            miniAppCustomPermission.pairValues.find {
-                it.first == type
-            }?.let { orderedPair.add(index, it) }
-        }
-
-        return MiniAppCustomPermission(miniAppId, orderedPair)
+    // Sort the `pairValues` by ordinal of [MiniAppCustomPermissionType].
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun sortedByDefault(miniAppCustomPermission: MiniAppCustomPermission): MiniAppCustomPermission {
+        val sortedPairValues = miniAppCustomPermission.pairValues.sortedBy { it.first.ordinal }
+        return MiniAppCustomPermission(miniAppCustomPermission.miniAppId, sortedPairValues)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
@@ -149,6 +130,21 @@ internal class MiniAppCustomPermissionCache(context: Context) {
             first.type in supplied.groupBy { it.first.type }
         }
         return combined + supplied
+    }
+
+    /**
+     * Check if any specific custom permission has been allowed or denied.
+     * @param [miniAppId] the key provided to find the stored results per MiniApp.
+     * @param [type] MiniAppCustomPermissionType to check.
+     * @return [Boolean] True if the permission has been allowed, otherwise false.
+     */
+    fun hasPermission(miniAppId: String, type: MiniAppCustomPermissionType): Boolean {
+        var isPermissionGranted = false
+        readPermissions(miniAppId).pairValues.find {
+            it.first == type && it.second == MiniAppCustomPermissionResult.ALLOWED
+        }?.let { isPermissionGranted = true }
+
+        return isPermissionGranted
     }
 
     /**

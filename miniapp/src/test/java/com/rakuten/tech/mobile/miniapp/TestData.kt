@@ -14,6 +14,7 @@ internal const val TEST_URL_HTTPS_2 = "https://www.example.com/2/"
 internal const val TEST_PHONE_URI = "tel:123456"
 
 internal const val TEST_MA_ID = "test_id"
+internal const val TEST_MA_URL = "https://miniapp"
 internal const val TEST_MA_DISPLAY_NAME = "test_name"
 internal const val TEST_MA_ICON = "test_icon"
 internal const val TEST_MA_VERSION_TAG = "test_vtag"
@@ -36,6 +37,7 @@ internal const val INVALID_FILE_URL_PATH = "https://78d85043-d04f-486a-8212-bf26
 
 internal const val TEST_USER_NAME = "test_user_name"
 internal const val TEST_PROFILE_PHOTO = "data:image/png;base64,encodedValue"
+internal const val TEST_CONTACT_ID = "test_contact_id"
 
 internal val TEST_MA = MiniAppInfo(
     id = TEST_MA_ID,

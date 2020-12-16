@@ -64,11 +64,8 @@ internal class CustomPermissionBridgeDispatcher(
     fun filterDeniedPermissions(): List<Pair<MiniAppCustomPermissionType, String>> {
         if (permissionsWithDescription.isEmpty()) return emptyList()
 
-        val cachedList = customPermissionCache.readPermissions(miniAppId).pairValues
         return permissionsWithDescription.filter { (first) ->
-            cachedList.find {
-                it.first == first && it.second == MiniAppCustomPermissionResult.DENIED
-            } != null
+            !customPermissionCache.hasPermission(miniAppId, first)
         }
     }
 
@@ -144,8 +141,7 @@ internal class CustomPermissionBridgeDispatcher(
         callbackObj?.id?.let { bridgeExecutor.postValue(it, jsonResult) }
     }
 
-    @VisibleForTesting
-    fun postCustomPermissionError(errMessage: String) {
+    internal fun postCustomPermissionError(errMessage: String) {
         callbackObj?.id?.let {
             bridgeExecutor.postError(
                 it,

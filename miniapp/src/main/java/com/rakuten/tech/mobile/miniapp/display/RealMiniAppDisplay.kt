@@ -30,8 +30,29 @@ internal class RealMiniAppDisplay(
     val miniAppCustomPermissionCache: MiniAppCustomPermissionCache
 ) : MiniAppDisplay {
 
+    var appUrl: String? = null
+        private set
     @VisibleForTesting
     internal var miniAppWebView: MiniAppWebView? = null
+
+    constructor(
+        context: Context,
+        appUrl: String,
+        miniAppMessageBridge: MiniAppMessageBridge,
+        miniAppNavigator: MiniAppNavigator?,
+        hostAppUserAgentInfo: String,
+        miniAppCustomPermissionCache: MiniAppCustomPermissionCache
+    ) : this(
+        context,
+        "",
+        MiniAppInfo.empty(),
+        miniAppMessageBridge,
+        miniAppNavigator,
+        hostAppUserAgentInfo,
+        miniAppCustomPermissionCache
+    ) {
+        this.appUrl = appUrl
+    }
 
     // Returns the view only when context type is legit else throw back error
     // Activity context needs to be used here, to prevent issues, where some native elements are
@@ -69,20 +90,30 @@ internal class RealMiniAppDisplay(
         }
     } else false
 
+    @Suppress("LongMethod")
     private suspend fun provideMiniAppWebView(context: Context): MiniAppWebView =
         miniAppWebView ?: withContext(Dispatchers.Main) {
-            miniAppWebView = MiniAppWebView(
-                context = context,
-                basePath = basePath,
-                miniAppInfo = miniAppInfo,
-                miniAppMessageBridge = miniAppMessageBridge,
-                miniAppNavigator = miniAppNavigator,
-                hostAppUserAgentInfo = hostAppUserAgentInfo,
-                miniAppCustomPermissionCache = miniAppCustomPermissionCache
-            )
-
-            val cookieManager: CookieManager = CookieManager.getInstance()
-            cookieManager.setAcceptThirdPartyCookies(miniAppWebView, true)
+            if (appUrl != null) {
+                miniAppWebView = MiniAppHttpWebView(
+                    context = context,
+                    miniAppInfo = miniAppInfo,
+                    appUrl = appUrl!!,
+                    miniAppMessageBridge = miniAppMessageBridge,
+                    miniAppNavigator = miniAppNavigator,
+                    hostAppUserAgentInfo = hostAppUserAgentInfo,
+                    miniAppCustomPermissionCache = miniAppCustomPermissionCache
+                )
+            } else {
+                miniAppWebView = MiniAppWebView(
+                    context = context,
+                    basePath = basePath,
+                    miniAppInfo = miniAppInfo,
+                    miniAppMessageBridge = miniAppMessageBridge,
+                    miniAppNavigator = miniAppNavigator,
+                    hostAppUserAgentInfo = hostAppUserAgentInfo,
+                    miniAppCustomPermissionCache = miniAppCustomPermissionCache
+                )
+            }
 
             miniAppWebView!!
         }
