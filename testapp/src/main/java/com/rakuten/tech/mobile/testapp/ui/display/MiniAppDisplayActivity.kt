@@ -1,42 +1,47 @@
 package com.rakuten.tech.mobile.testapp.ui.display
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.rakuten.tech.mobile.miniapp.MiniAppFileChooser
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.ads.AdMobDisplayer
-import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
 import com.rakuten.tech.mobile.miniapp.js.userinfo.Contact
 import com.rakuten.tech.mobile.miniapp.js.userinfo.TokenData
 import com.rakuten.tech.mobile.miniapp.js.userinfo.UserInfoBridgeDispatcher
-import com.rakuten.tech.mobile.miniapp.permission.MiniAppPermissionType
 import com.rakuten.tech.mobile.miniapp.navigator.ExternalResultHandler
+import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
+import com.rakuten.tech.mobile.miniapp.permission.MiniAppPermissionType
 import com.rakuten.tech.mobile.miniapp.testapp.R
 import com.rakuten.tech.mobile.miniapp.testapp.databinding.MiniAppDisplayActivityBinding
 import com.rakuten.tech.mobile.testapp.helper.AppPermission
 import com.rakuten.tech.mobile.testapp.ui.base.BaseActivity
 import com.rakuten.tech.mobile.testapp.ui.settings.AppSettings
-import java.util.ArrayList
+import java.util.*
+
 
 class MiniAppDisplayActivity : BaseActivity() {
 
     private lateinit var miniAppMessageBridge: MiniAppMessageBridge
     private lateinit var miniAppNavigator: MiniAppNavigator
+    private lateinit var miniAppFileChooser: MiniAppFileChooser
     private var miniappPermissionCallback: (isGranted: Boolean) -> Unit = {}
     private lateinit var sampleWebViewExternalResultHandler: ExternalResultHandler
     private lateinit var binding: MiniAppDisplayActivityBinding
@@ -122,12 +127,17 @@ class MiniAppDisplayActivity : BaseActivity() {
             }
         }
 
+        miniAppFileChooser = object : MiniAppFileChooser {
+            override var getFile: ValueCallback<Array<Uri>>? = null
+        }
+
         if (appUrl != null) {
             viewModel.obtainMiniAppDisplayUrl(
                 this@MiniAppDisplayActivity,
                 appUrl,
                 miniAppMessageBridge,
-                miniAppNavigator
+                miniAppNavigator,
+                miniAppFileChooser
             )
         } else {
             viewModel.obtainMiniAppDisplay(
@@ -135,7 +145,8 @@ class MiniAppDisplayActivity : BaseActivity() {
                 appInfo,
                 appId!!,
                 miniAppMessageBridge,
-                miniAppNavigator
+                miniAppNavigator,
+                miniAppFileChooser
             )
         }
     }
@@ -211,12 +222,25 @@ class MiniAppDisplayActivity : BaseActivity() {
         miniappPermissionCallback.invoke(isGranted)
     }
 
+    private fun Any.onReceiveValue(resultsArray: Array<Uri?>) {}
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == externalWebViewReqCode && resultCode == Activity.RESULT_OK) {
             data?.let { intent -> sampleWebViewExternalResultHandler.emitResult(intent) }
-        } else if (requestCode == 991) {
+        } else if (requestCode == 1115) {
             Toast.makeText(this, "granted camera!", Toast.LENGTH_LONG).show()
+
+            val result = if (intent == null || resultCode != RESULT_OK)
+                null
+            else data?.data
+            val resultsArray = arrayOfNulls<Uri>(1)
+            resultsArray[0] = result
+
+            miniAppFileChooser.getFile?.onReceiveValue(resultsArray)
+
+            Log.d("AAAAA",""+ resultsArray[0])
+            Log.d("AAAAA2",""+result.toString())
         }
     }
 

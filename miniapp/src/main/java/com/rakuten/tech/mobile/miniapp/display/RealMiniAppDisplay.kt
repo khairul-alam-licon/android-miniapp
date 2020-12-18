@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.OnLifecycleEvent
 import com.rakuten.tech.mobile.miniapp.MiniAppDisplay
+import com.rakuten.tech.mobile.miniapp.MiniAppFileChooser
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.js.MiniAppMessageBridge
 import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
@@ -26,6 +27,7 @@ internal class RealMiniAppDisplay(
     val miniAppInfo: MiniAppInfo,
     val miniAppMessageBridge: MiniAppMessageBridge,
     val miniAppNavigator: MiniAppNavigator?,
+    val miniAppFileChooser: MiniAppFileChooser?,
     val hostAppUserAgentInfo: String,
     val miniAppCustomPermissionCache: MiniAppCustomPermissionCache
 ) : MiniAppDisplay {
@@ -40,6 +42,7 @@ internal class RealMiniAppDisplay(
         appUrl: String,
         miniAppMessageBridge: MiniAppMessageBridge,
         miniAppNavigator: MiniAppNavigator?,
+        miniAppFileChooser: MiniAppFileChooser?,
         hostAppUserAgentInfo: String,
         miniAppCustomPermissionCache: MiniAppCustomPermissionCache
     ) : this(
@@ -48,6 +51,7 @@ internal class RealMiniAppDisplay(
         MiniAppInfo.empty(),
         miniAppMessageBridge,
         miniAppNavigator,
+        miniAppFileChooser,
         hostAppUserAgentInfo,
         miniAppCustomPermissionCache
     ) {
@@ -100,6 +104,7 @@ internal class RealMiniAppDisplay(
                     appUrl = appUrl!!,
                     miniAppMessageBridge = miniAppMessageBridge,
                     miniAppNavigator = miniAppNavigator,
+                    miniAppFileChooser = miniAppFileChooser,
                     hostAppUserAgentInfo = hostAppUserAgentInfo,
                     miniAppCustomPermissionCache = miniAppCustomPermissionCache
                 )
@@ -110,6 +115,7 @@ internal class RealMiniAppDisplay(
                     miniAppInfo = miniAppInfo,
                     miniAppMessageBridge = miniAppMessageBridge,
                     miniAppNavigator = miniAppNavigator,
+                    miniAppFileChooser = miniAppFileChooser,
                     hostAppUserAgentInfo = hostAppUserAgentInfo,
                     miniAppCustomPermissionCache = miniAppCustomPermissionCache
                 )

@@ -15,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.webkit.WebViewAssetLoader
+import com.rakuten.tech.mobile.miniapp.MiniAppFileChooser
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
 import com.rakuten.tech.mobile.miniapp.MiniAppScheme
 import com.rakuten.tech.mobile.miniapp.navigator.MiniAppNavigator
@@ -33,11 +34,13 @@ internal open class MiniAppWebView(
     val miniAppInfo: MiniAppInfo,
     val miniAppMessageBridge: MiniAppMessageBridge,
     var miniAppNavigator: MiniAppNavigator?,
+    val miniAppFileChooser: MiniAppFileChooser?,
     val hostAppUserAgentInfo: String,
     val miniAppCustomPermissionCache: MiniAppCustomPermissionCache,
     val miniAppWebChromeClient: MiniAppWebChromeClient = MiniAppWebChromeClient(
         context,
         miniAppInfo,
+        miniAppFileChooser,
         miniAppCustomPermissionCache
     )
 ) : WebView(context), WebViewListener {
@@ -79,10 +82,8 @@ internal open class MiniAppWebView(
         settings.domStorageEnabled = true
         settings.databaseEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
-
-//        settings.setSupportZoom(false)
-//        settings.allowFileAccess = true
-//        settings.allowContentAccess = true
+        //settings.allowContentAccess = true;
+       // settings.allowFileAccess = true;
 
         if (hostAppUserAgentInfo.isNotEmpty())
             settings.userAgentString =
@@ -91,19 +92,6 @@ internal open class MiniAppWebView(
         setupMiniAppNavigator()
         webViewClient = getMiniAppWebViewClient()
         webChromeClient = miniAppWebChromeClient
-
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            )
-            == PackageManager.PERMISSION_DENIED
-        ) {
-            ActivityCompat.requestPermissions(
-                context,
-                arrayOf(Manifest.permission.CAMERA),
-                991
-            )
-        }
 
         loadUrl(getLoadUrl())
     }

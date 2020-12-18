@@ -40,7 +40,8 @@ internal class RealMiniApp(
     override suspend fun create(
         appId: String,
         miniAppMessageBridge: MiniAppMessageBridge,
-        miniAppNavigator: MiniAppNavigator?
+        miniAppNavigator: MiniAppNavigator?,
+        miniAppFileChooser: MiniAppFileChooser?
     ): MiniAppDisplay = when {
         appId.isBlank() -> throw sdkExceptionForInvalidArguments()
         else -> {
@@ -50,6 +51,7 @@ internal class RealMiniApp(
                 miniAppInfo,
                 miniAppMessageBridge,
                 miniAppNavigator,
+                miniAppFileChooser,
                 miniAppCustomPermissionCache
             )
         }
@@ -58,7 +60,8 @@ internal class RealMiniApp(
     override suspend fun create(
         appInfo: MiniAppInfo,
         miniAppMessageBridge: MiniAppMessageBridge,
-        miniAppNavigator: MiniAppNavigator?
+        miniAppNavigator: MiniAppNavigator?,
+        miniAppFileChooser: MiniAppFileChooser?
     ): MiniAppDisplay = when {
         appInfo.id.isBlank() -> throw sdkExceptionForInvalidArguments()
         else -> {
@@ -68,6 +71,7 @@ internal class RealMiniApp(
                 miniAppInfo,
                 miniAppMessageBridge,
                 miniAppNavigator,
+                miniAppFileChooser,
                 miniAppCustomPermissionCache
             )
         }
@@ -76,7 +80,8 @@ internal class RealMiniApp(
     override suspend fun createWithUrl(
         appUrl: String,
         miniAppMessageBridge: MiniAppMessageBridge,
-        miniAppNavigator: MiniAppNavigator?
+        miniAppNavigator: MiniAppNavigator?,
+        miniAppFileChooser: MiniAppFileChooser?
     ): MiniAppDisplay = when {
         appUrl.isBlank() -> throw sdkExceptionForInvalidArguments()
         else -> {
@@ -85,6 +90,7 @@ internal class RealMiniApp(
                 appUrl,
                 miniAppMessageBridge,
                 miniAppNavigator,
+                miniAppFileChooser,
                 miniAppCustomPermissionCache
             )
         }
