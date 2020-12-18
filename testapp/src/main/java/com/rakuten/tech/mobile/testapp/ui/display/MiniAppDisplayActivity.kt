@@ -11,7 +11,6 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -72,6 +71,8 @@ class MiniAppDisplayActivity : BaseActivity() {
         }
     }
 
+    private val cameraFilePath: Uri? = null
+
     private lateinit var viewModel: MiniAppDisplayViewModel
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
@@ -129,6 +130,13 @@ class MiniAppDisplayActivity : BaseActivity() {
 
         miniAppFileChooser = object : MiniAppFileChooser {
             override var getFile: ValueCallback<Array<Uri>>? = null
+
+            override var cameraFilePath: Uri? = null
+
+            override fun getCameraFilePath(callback: (cameraFilePath: Uri?) -> Unit) {
+                Log.d("AAAA hostapp",""+cameraFilePath.toString())
+                this.cameraFilePath = cameraFilePath
+            }
         }
 
         if (appUrl != null) {
@@ -231,16 +239,30 @@ class MiniAppDisplayActivity : BaseActivity() {
         } else if (requestCode == 1115) {
             Toast.makeText(this, "granted camera!", Toast.LENGTH_LONG).show()
 
-            val result = if (intent == null || resultCode != RESULT_OK)
-                null
-            else data?.data
-            val resultsArray = arrayOfNulls<Uri>(1)
-            resultsArray[0] = result
+//            val result = if (intent == null || resultCode != RESULT_OK)
+//                null
+//            else data?.data
+//            val resultsArray = arrayOfNulls<Uri>(1)
+//            resultsArray[0] = result
+//
+//            //miniAppFileChooser.getFile?.onReceiveValue(resultsArray)
+//
+//            miniAppFileChooser.cameraFilePath?.onReceiveValue(resultsArray)
 
-            miniAppFileChooser.getFile?.onReceiveValue(resultsArray)
 
-            Log.d("AAAAA",""+ resultsArray[0])
-            Log.d("AAAAA2",""+result.toString())
+            // when using camera intent
+            var result: Uri? = null
+
+            try {
+                result = cameraFilePath
+            } catch (e: Exception) {
+                Toast.makeText(applicationContext, "activity :$e", Toast.LENGTH_LONG).show()
+            }
+
+            miniAppFileChooser.getFile?.onReceiveValue(arrayOf(result)) // working
+
+            Log.d("AAAAA",""+ arrayOf(result)[0].toString()) // working
+            Log.d("AAAAA2",""+miniAppFileChooser.getFile?.toString())
         }
     }
 

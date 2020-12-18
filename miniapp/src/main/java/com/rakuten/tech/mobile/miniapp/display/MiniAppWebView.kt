@@ -82,8 +82,8 @@ internal open class MiniAppWebView(
         settings.domStorageEnabled = true
         settings.databaseEnabled = true
         settings.mediaPlaybackRequiresUserGesture = false
-        //settings.allowContentAccess = true;
-       // settings.allowFileAccess = true;
+//        settings.allowContentAccess = true
+//        settings.allowFileAccess = true
 
         if (hostAppUserAgentInfo.isNotEmpty())
             settings.userAgentString =
