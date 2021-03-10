@@ -3,6 +3,7 @@ package com.rakuten.tech.mobile.miniapp.permission
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -116,6 +117,8 @@ internal class MiniAppCustomPermissionCache(context: Context) {
     fun applyStoringPermissions(miniAppCustomPermission: MiniAppCustomPermission) {
         val jsonToStore: String = Gson().toJson(sortedByDefault(miniAppCustomPermission))
         prefs.edit().putString(miniAppCustomPermission.miniAppId, jsonToStore).apply()
+
+        Log.d("AAAAACCC",""+jsonToStore)
     }
 
     // Sort the `pairValues` by ordinal of [MiniAppCustomPermissionType].

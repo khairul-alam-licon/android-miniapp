@@ -1,5 +1,6 @@
 package com.rakuten.tech.mobile.testapp.ui.display.preload
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,7 @@ import com.rakuten.tech.mobile.testapp.ui.permission.toReadableName
 class PreloadMiniAppPermissionAdapter :
     RecyclerView.Adapter<PreloadMiniAppPermissionAdapter.ViewHolder?>() {
 
-    private var manifestPermissions = ArrayList<PreloadManifestPermission>()
+    private var manifestPermissions = mutableListOf<PreloadManifestPermission>()
     var manifestPermissionPairs =
         arrayListOf<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>()
 
@@ -26,6 +27,12 @@ class PreloadMiniAppPermissionAdapter :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        if (!manifestPermissions[position].shouldDisplay) {
+            holder.root.visibility = View.GONE
+
+            Log.d("AAAA",""+manifestPermissions[position].toString())
+        }
+
         holder.permissionName.text = toReadableName(manifestPermissions[position].type)
         holder.permissionSwitch.visibility =
             if (manifestPermissions[position].isRequired) View.GONE else View.VISIBLE
@@ -54,16 +61,19 @@ class PreloadMiniAppPermissionAdapter :
 
     override fun getItemCount(): Int = manifestPermissions.size
 
-    fun addManifestPermissionList(permissions: ArrayList<PreloadManifestPermission>) {
+    fun addManifestPermissionList(permissions: MutableList<PreloadManifestPermission>) {
         manifestPermissions = permissions
         manifestPermissions.forEachIndexed { position, (type, _) ->
             manifestPermissionPairs.add(position, Pair(type, MiniAppCustomPermissionResult.ALLOWED))
         }
+
+        Log.d("AAAA0",""+manifestPermissions.toString())
         notifyDataSetChanged()
     }
 
     inner class ViewHolder(itemView: ItemListManifestPermissionBinding) :
         RecyclerView.ViewHolder(itemView.root) {
+        val root: View = itemView.root
         val permissionName: TextView = itemView.manifestPermissionName
         val permissionStatus: TextView = itemView.manifestPermissionStatus
         val permissionSwitch: SwitchCompat = itemView.manifestPermissionSwitch
