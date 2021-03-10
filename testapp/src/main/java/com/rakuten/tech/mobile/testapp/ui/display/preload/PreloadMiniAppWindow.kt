@@ -13,13 +13,13 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
+import com.rakuten.tech.mobile.miniapp.MiniAppManifest
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermission
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionResult
 import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionType
 import com.rakuten.tech.mobile.miniapp.testapp.R
 import com.rakuten.tech.mobile.miniapp.testapp.databinding.WindowPreloadMiniappBinding
 import com.rakuten.tech.mobile.testapp.helper.setIcon
-import java.lang.Exception
 
 class PreloadMiniAppWindow(
     private val context: Context,
@@ -32,6 +32,7 @@ class PreloadMiniAppWindow(
     private var miniAppInfo: MiniAppInfo? = null
     private var miniAppId: String = ""
     private var versionId: String = ""
+    private val permissionAdapter = PreloadMiniAppPermissionAdapter()
 
     private var prefs: SharedPreferences = context.getSharedPreferences(
         "com.rakuten.tech.mobile.miniapp.sample.first_time.launch", Context.MODE_PRIVATE
@@ -80,7 +81,6 @@ class PreloadMiniAppWindow(
         }
 
         // set manifest/metadata to UI: permissions
-        val permissionAdapter = PreloadMiniAppPermissionAdapter()
         binding.listPreloadPermission.layoutManager = LinearLayoutManager(context)
         binding.listPreloadPermission.isNestedScrollingEnabled = false
         binding.listPreloadPermission.adapter = permissionAdapter
@@ -107,133 +107,7 @@ class PreloadMiniAppWindow(
                                 storeAcceptance(true) // set true when accept
                                 preloadMiniAppLaunchListener.onPreloadMiniAppResponse(true)
                             } else {
-                                val changedPermissionsToShow = ArrayList<PreloadManifestPermission>()
-                                val detectedRemovablePermissionsToShow = ArrayList<PreloadManifestPermission>()
-                                val changedPermissionsToStore =
-                                    arrayListOf<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>()
-
-                                if (downloadedManifest != null) {
-                                    // detect required permissions changes
-                                    val uncommonRequiredPerms =
-                                        (apiManifest.requiredPermissions + downloadedManifest.requiredPermissions).groupBy { it.first.type }
-                                            .filter { it.value.size == 1 }
-                                            .flatMap { it.value }
-
-                                    if (uncommonRequiredPerms.isNotEmpty()) {
-                                        if (downloadedManifest.requiredPermissions.size < apiManifest.requiredPermissions.size) {
-                                            // show the extra permission in ui comes from api
-                                            uncommonRequiredPerms.forEach { (first, second) ->
-                                                val permission = PreloadManifestPermission(first, true, second, true)
-                                                changedPermissionsToShow.add(permission)
-                                            }
-
-                                            val cachedRequiredPerms = downloadedManifest.requiredPermissions.toMutableList()
-                                            cachedRequiredPerms.removeAll { (first) ->
-                                                first.type in uncommonRequiredPerms.groupBy { it.first.type }
-                                            }
-                                            cachedRequiredPerms.forEach {
-                                                changedPermissionsToStore.add(
-                                                    Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
-                                                )
-
-                                                detectedRemovablePermissionsToShow.add(PreloadManifestPermission(it.first, true, it.second, false))
-                                            }
-                                        } else {
-                                            // nothing to show in ui, remove required permissions not included in manifest
-                                            val cachedRequiredPerms =
-                                                downloadedManifest.requiredPermissions.toMutableList()
-                                            cachedRequiredPerms.removeAll { (first) ->
-                                                first.type in uncommonRequiredPerms.groupBy { it.first.type }
-                                            }
-                                            cachedRequiredPerms.forEach {
-                                                changedPermissionsToStore.add(
-                                                    Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
-                                                )
-
-                                                detectedRemovablePermissionsToShow.add(PreloadManifestPermission(it.first, true, it.second, false))
-                                            }
-                                        }
-                                    }
-
-                                    // detect optional permissions changes
-                                    val uncommonOptionalPerms =
-                                        (apiManifest.optionalPermissions + downloadedManifest.optionalPermissions).groupBy { it.first.type }
-                                            .filter { it.value.size == 1 }
-                                            .flatMap { it.value }
-
-                                    if (uncommonOptionalPerms.isNotEmpty()) {
-                                        if (downloadedManifest.optionalPermissions.size < apiManifest.optionalPermissions.size) {
-                                            // show the extra permission in ui comes from api
-                                            uncommonOptionalPerms.forEach { (first, second) ->
-                                                val permission = PreloadManifestPermission(first, false, second, true)
-                                                changedPermissionsToShow.add(permission)
-                                            }
-
-                                            val cachedOptionalPerms = downloadedManifest.optionalPermissions.toMutableList()
-                                            cachedOptionalPerms.removeAll { (first) ->
-                                                first.type in uncommonOptionalPerms.groupBy { it.first.type }
-                                            }
-                                            cachedOptionalPerms.forEach {
-                                                changedPermissionsToStore.add(
-                                                    Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
-                                                )
-
-                                                detectedRemovablePermissionsToShow.add(PreloadManifestPermission(it.first, false, it.second, false))
-                                            }
-                                        } else {
-                                            // nothing to show in ui, remove optional permissions not included in manifest
-                                            val cachedOptionalPerms =
-                                                downloadedManifest.optionalPermissions.toMutableList()
-                                            cachedOptionalPerms.removeAll { (first) ->
-                                                first.type in uncommonOptionalPerms.groupBy { it.first.type }
-                                            }
-                                            cachedOptionalPerms.forEach {
-                                                changedPermissionsToStore.add(
-                                                    Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
-                                                )
-
-                                                detectedRemovablePermissionsToShow.add(PreloadManifestPermission(it.first, false, it.second, false))
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (changedPermissionsToShow.isEmpty() && changedPermissionsToStore.isEmpty()) {
-                                    val manifestPermissions = ArrayList<PreloadManifestPermission>()
-
-                                    apiManifest.requiredPermissions.forEach {
-                                        val permission = PreloadManifestPermission(
-                                            it.first,
-                                            true,
-                                            it.second,
-                                            true
-                                        )
-                                        manifestPermissions.add(permission)
-                                    }
-                                    apiManifest.optionalPermissions.forEach {
-                                        val permission = PreloadManifestPermission(
-                                            it.first,
-                                            false,
-                                            it.second,
-                                            true
-                                        )
-                                        manifestPermissions.add(permission)
-                                    }
-
-                                    permissionAdapter.addManifestPermissionList(manifestPermissions)
-                                    launchScreen()
-                                } else if (changedPermissionsToShow.isNotEmpty() && changedPermissionsToStore.isEmpty()) {
-                                    permissionAdapter.addManifestPermissionList(changedPermissionsToShow)
-                                    launchScreen()
-                                } else if (changedPermissionsToShow.isEmpty() && changedPermissionsToStore.isNotEmpty()) {
-                                    storeAcceptance(true) // set true when accept
-                                    storeManifestPermission(changedPermissionsToStore)
-                                    preloadMiniAppLaunchListener.onPreloadMiniAppResponse(true)
-                                } else if (changedPermissionsToShow.isNotEmpty() && changedPermissionsToStore.isNotEmpty()) {
-                                    val all: List<PreloadManifestPermission> = changedPermissionsToShow + detectedRemovablePermissionsToShow
-                                    permissionAdapter.addManifestPermissionList(all.toMutableList())
-                                    launchScreen()
-                                }
+                                compareManifest(downloadedManifest, apiManifest)
                             }
                         })
 
@@ -261,13 +135,142 @@ class PreloadMiniAppWindow(
         }
     }
 
-    private fun isAccepted(): Boolean {
-        try {
-            if (prefs.contains(miniAppId)) return prefs.getBoolean(miniAppId, DEFAULT_ACCEPTANCE)
-        } catch (e: Exception) {
-            return false
+    private val changedPermissionsToShow = ArrayList<PreloadManifestPermission>()
+    private val detectedRemovablePermissionsToShow = ArrayList<PreloadManifestPermission>()
+    private val changedPermissionsToStore = arrayListOf<Pair<MiniAppCustomPermissionType, MiniAppCustomPermissionResult>>()
+
+    private fun detectRequiredPermissions(
+        downloadedManifest: MiniAppManifest,
+        apiManifest: MiniAppManifest
+    ) {
+        // detect required permissions changes
+        val uncommonRequiredPerms =
+            (apiManifest.requiredPermissions + downloadedManifest.requiredPermissions).groupBy { it.first.type }
+                .filter { it.value.size == 1 }
+                .flatMap { it.value }
+
+        if (uncommonRequiredPerms.isNotEmpty()) {
+            if (downloadedManifest.requiredPermissions.size < apiManifest.requiredPermissions.size) {
+                // show the extra permission in ui comes from api
+                uncommonRequiredPerms.forEach { (first, second) ->
+                    val permission = PreloadManifestPermission(first, true, second, true)
+                    changedPermissionsToShow.add(permission)
+                }
+
+                val cachedRequiredPerms = downloadedManifest.requiredPermissions.toMutableList()
+                cachedRequiredPerms.removeAll { (first) ->
+                    first.type in uncommonRequiredPerms.groupBy { it.first.type }
+                }
+                cachedRequiredPerms.forEach {
+                    changedPermissionsToStore.add(
+                        Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
+                    )
+
+                    val manifest = PreloadManifestPermission(it.first, true, it.second, false)
+                    detectedRemovablePermissionsToShow.add(manifest)
+                }
+            } else {
+                // nothing to show in ui, remove required permissions not included in manifest
+                val cachedRequiredPerms = downloadedManifest.requiredPermissions.toMutableList()
+                cachedRequiredPerms.removeAll { (first) ->
+                    first.type in uncommonRequiredPerms.groupBy { it.first.type }
+                }
+                cachedRequiredPerms.forEach {
+                    changedPermissionsToStore.add(
+                        Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
+                    )
+
+                    val manifest = PreloadManifestPermission(it.first, true, it.second, false)
+                    detectedRemovablePermissionsToShow.add(manifest)
+                }
+            }
         }
-        return false
+    }
+
+    private fun detectOptionalPermission(downloadedManifest: MiniAppManifest, apiManifest: MiniAppManifest) {
+        // detect optional permissions changes
+        val uncommonOptionalPerms =
+            (apiManifest.optionalPermissions + downloadedManifest.optionalPermissions).groupBy { it.first.type }
+                .filter { it.value.size == 1 }
+                .flatMap { it.value }
+
+        if (uncommonOptionalPerms.isNotEmpty()) {
+            if (downloadedManifest.optionalPermissions.size < apiManifest.optionalPermissions.size) {
+                // show the extra permission in ui comes from api
+                uncommonOptionalPerms.forEach { (first, second) ->
+                    val permission = PreloadManifestPermission(first, false, second, true)
+                    changedPermissionsToShow.add(permission)
+                }
+
+                val cachedOptionalPerms = downloadedManifest.optionalPermissions.toMutableList()
+                cachedOptionalPerms.removeAll { (first) ->
+                    first.type in uncommonOptionalPerms.groupBy { it.first.type }
+                }
+                cachedOptionalPerms.forEach {
+                    changedPermissionsToStore.add(
+                        Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
+                    )
+
+                    val manifest = PreloadManifestPermission(it.first, false, it.second, false)
+                    detectedRemovablePermissionsToShow.add(manifest)
+                }
+            } else {
+                // nothing to show in ui, remove optional permissions not included in manifest
+                val cachedOptionalPerms = downloadedManifest.optionalPermissions.toMutableList()
+                cachedOptionalPerms.removeAll { (first) ->
+                    first.type in uncommonOptionalPerms.groupBy { it.first.type }
+                }
+                cachedOptionalPerms.forEach {
+                    changedPermissionsToStore.add(
+                        Pair(it.first, MiniAppCustomPermissionResult.ALLOWED)
+                    )
+
+                    val manifest = PreloadManifestPermission(it.first, false, it.second, false)
+                    detectedRemovablePermissionsToShow.add(manifest)
+                }
+            }
+        }
+    }
+
+    private fun compareManifest(
+        downloadedManifest: MiniAppManifest?,
+        apiManifest: MiniAppManifest
+    ) {
+        if (downloadedManifest != null) {
+            detectRequiredPermissions(downloadedManifest, apiManifest)
+            detectOptionalPermission(downloadedManifest, apiManifest)
+        }
+
+        if (changedPermissionsToShow.isEmpty() && changedPermissionsToStore.isEmpty()) {
+            // show latest manifest from api
+            val manifestPermissions = ArrayList<PreloadManifestPermission>()
+
+            apiManifest.requiredPermissions.forEach {
+                val permission = PreloadManifestPermission(it.first, true, it.second, true)
+                manifestPermissions.add(permission)
+            }
+            apiManifest.optionalPermissions.forEach {
+                val permission = PreloadManifestPermission(it.first, false, it.second, true)
+                manifestPermissions.add(permission)
+            }
+
+            permissionAdapter.addManifestPermissionList(manifestPermissions)
+            launchScreen()
+        } else if (changedPermissionsToShow.isNotEmpty() && changedPermissionsToStore.isEmpty()) {
+            // show new permissions
+            permissionAdapter.addManifestPermissionList(changedPermissionsToShow)
+            launchScreen()
+        } else if (changedPermissionsToShow.isEmpty() && changedPermissionsToStore.isNotEmpty()) {
+            // detect removable permissions and save
+            storeAcceptance(true) // set true when accept
+            storeManifestPermission(changedPermissionsToStore)
+            preloadMiniAppLaunchListener.onPreloadMiniAppResponse(true)
+        } else if (changedPermissionsToShow.isNotEmpty() && changedPermissionsToStore.isNotEmpty()) {
+            // detect removable permissions & new permissions and show ui
+            val all: List<PreloadManifestPermission> = changedPermissionsToShow + detectedRemovablePermissionsToShow
+            permissionAdapter.addManifestPermissionList(all.toMutableList())
+            launchScreen()
+        }
     }
 
     private fun storeManifestPermission(

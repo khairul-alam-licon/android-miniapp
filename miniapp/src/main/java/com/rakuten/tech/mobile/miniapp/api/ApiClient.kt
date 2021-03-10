@@ -1,5 +1,6 @@
 package com.rakuten.tech.mobile.miniapp.api
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.google.gson.annotations.SerializedName
 import com.rakuten.tech.mobile.miniapp.MiniAppInfo
@@ -110,6 +111,7 @@ internal class RetrofitRequestExecutor(
 
         when {
             response.isSuccessful -> {
+                Log.d("AAAA222",""+response.body())
                 // Body shouldn't be null if request was successful
                 response.body() ?: throw sdkExceptionForInternalServerError()
             }

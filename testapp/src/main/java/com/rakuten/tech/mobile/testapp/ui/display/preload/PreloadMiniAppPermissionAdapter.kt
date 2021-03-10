@@ -1,6 +1,5 @@
 package com.rakuten.tech.mobile.testapp.ui.display.preload
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,8 +28,6 @@ class PreloadMiniAppPermissionAdapter :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if (!manifestPermissions[position].shouldDisplay) {
             holder.root.visibility = View.GONE
-
-            Log.d("AAAA",""+manifestPermissions[position].toString())
         }
 
         holder.permissionName.text = toReadableName(manifestPermissions[position].type)
@@ -67,7 +64,6 @@ class PreloadMiniAppPermissionAdapter :
             manifestPermissionPairs.add(position, Pair(type, MiniAppCustomPermissionResult.ALLOWED))
         }
 
-        Log.d("AAAA0",""+manifestPermissions.toString())
         notifyDataSetChanged()
     }
 
