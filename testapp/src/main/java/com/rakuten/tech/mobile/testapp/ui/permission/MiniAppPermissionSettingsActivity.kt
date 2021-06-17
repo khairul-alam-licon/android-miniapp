@@ -16,6 +16,7 @@ import com.rakuten.tech.mobile.miniapp.permission.MiniAppCustomPermissionType
 import com.rakuten.tech.mobile.miniapp.testapp.R
 import com.rakuten.tech.mobile.miniapp.testapp.databinding.ListCustomPermissionBinding
 import com.rakuten.tech.mobile.testapp.ui.base.BaseActivity
+import com.rakuten.tech.mobile.testapp.ui.display.error.QRErrorWindow
 import com.rakuten.tech.mobile.testapp.ui.settings.AppSettings
 
 class MiniAppPermissionSettingsActivity(private val miniapp: MiniApp) : BaseActivity() {
@@ -66,6 +67,8 @@ class MiniAppPermissionSettingsActivity(private val miniapp: MiniApp) : BaseActi
 
         if (namesForAdapter.isEmpty()) binding.emptyView.visibility = View.VISIBLE
         else binding.emptyView.visibility = View.GONE
+
+        QRErrorWindow.getInstance(this).showMiniAppNoLongerExistError()
     }
 
     private fun initAdapter() {

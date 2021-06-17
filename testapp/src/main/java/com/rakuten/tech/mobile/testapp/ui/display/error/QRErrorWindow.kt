@@ -16,56 +16,52 @@ import com.rakuten.tech.mobile.miniapp.testapp.databinding.WindowQrCodeErrorBind
 /**
  * This QRErrorWindow is the common class for qrcode/deeplink error.
  */
-class QRErrorWindow {
+class QRErrorWindow private constructor(context: Context) {
+    private var dialog: AlertDialog
+    private lateinit var binding: WindowQrCodeErrorBinding
+    private lateinit var context: Context
 
-    companion object {
-        private var instance: QRErrorWindow? = null
-        private lateinit var dialog: AlertDialog
-        private lateinit var binding: WindowQrCodeErrorBinding
-        private lateinit var context: Context
+    init {
+        dialog = initDialog(context)
+    }
 
-        @Synchronized
-        fun getInstance(context: Context): QRErrorWindow {
-            dialog = initDialog(context)
-            this.context = context
-            return instance ?: QRErrorWindow().also { instance = it }
-        }
+    companion object : SingletonHolder<QRErrorWindow, Context>(::QRErrorWindow)
 
-        private fun initDialog(context: Context): AlertDialog {
-            // set ui components
-            val layoutInflater = LayoutInflater.from(context)
-            binding = DataBindingUtil.inflate(
+    private fun initDialog(context: Context): AlertDialog {
+        this.context = context
+        // set ui components
+        val layoutInflater = LayoutInflater.from(context)
+        binding = DataBindingUtil.inflate(
                 layoutInflater, R.layout.window_qr_code_error, null, false
-            )
-            val alertDialog = AlertDialog.Builder(context, R.style.AppTheme_DefaultWindow).create()
-            alertDialog?.setView(binding.root)
-            return alertDialog
-        }
+        )
+        val alertDialog = AlertDialog.Builder(context, R.style.AppTheme_DefaultWindow).create()
+        alertDialog?.setView(binding.root)
+        return alertDialog
     }
 
     /** show error screen for miniApp no longer exist. */
     fun showMiniAppNoLongerExistError() {
-        if (instance != null) renderScreen(QRCodeErrorType.MiniAppNoLongerExist)
+        renderScreen(QRCodeErrorType.MiniAppNoLongerExist)
     }
 
     /** show error screen for does not have permission. */
     fun showMiniAppPermissionError() {
-        if (instance != null) renderScreen(QRCodeErrorType.MiniAppNoPermission)
+        renderScreen(QRCodeErrorType.MiniAppNoPermission)
     }
 
     /** show error screen for qrCode expired. */
     fun showQRCodeExpiredError() {
-        if (instance != null) renderScreen(QRCodeErrorType.QRCodeExpire)
+        renderScreen(QRCodeErrorType.QRCodeExpire)
     }
 
     /** show error screen for miniApp can not be previewed for specific version. */
     fun showMiniAppPreviewError(versionCode: String) {
-        if (instance != null) renderScreen(QRCodeErrorType.MiniAppNoPreview, versionCode)
+        renderScreen(QRCodeErrorType.MiniAppNoPreview, versionCode)
     }
 
     /** show error screen for miniApp version do not exist. */
     fun showMiniAppVersionError(versionCode: String) {
-        if (instance != null) renderScreen(QRCodeErrorType.MiniAppVersionMisMatch, versionCode)
+        renderScreen(QRCodeErrorType.MiniAppVersionMisMatch, versionCode)
     }
 
     private fun dismissDialog() {
